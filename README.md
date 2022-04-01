@@ -86,12 +86,15 @@ return "goods";
 ```
 
 ### @ModelAttribute VS @RequestBody
-@Vaidated 어노테이션을 @ModelAttribute 와 @RequestBody 에 적용할 때의 차이.  
-ModelAttribute 는 필드 단위로 바인딩을 적용된다. 특정 필드가 바인딩되지 않아도 검증이 수행된다.  
-RequestBody (HttpMessageConverter) 는 Json 데이터를 객체로 변경하지 못 하면 예외가 발생한다. 이후 단계인 검증이 수행되지 않는다.  
-발생하는 예외는 MethodArgumentNotValidException.  
+ModelAttribute 는 필드 단위로 바인딩을 적용된다
+- 특정 필드가 바인딩되지 않아도 검증이 수행된다.  
 
-**@ControllerAdvice**로 처리
+RequestBody (HttpMessageConverter) 는 Json 데이터를 객체로 변경하지 못 하면 예외가 발생한다.
+- 이후 단계인 검증이 수행되지 않는다. 
+- 발생하는 예외는 MethodArgumentNotValidException.  
+
+**RestController**를 **@ControllerAdvice**로 처리
+
 ```java
 @ControllerAdvice
 public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
@@ -119,6 +122,77 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
     }
     
 }
+```
+
+### ResponseEntityExceptionHandler
+Spring MVC 예외를 처리하고 ResponseEntity를 리턴하는 추상클래스. @ExceptionHandler 메서드를 제공한다.  
+Rest API @ControllerAdvice 클래스가 이 클래스를 구현.  
+
+```java
+public abstract class ResponseEntityExceptionHandler {
+
+	/**
+	 * Provides handling for standard Spring MVC exceptions.
+	 * @param ex the target exception
+	 * @param request the current request
+	 */
+	@ExceptionHandler({
+			HttpRequestMethodNotSupportedException.class,
+			HttpMediaTypeNotSupportedException.class,
+			HttpMediaTypeNotAcceptableException.class,
+			MissingPathVariableException.class,
+			MissingServletRequestParameterException.class,
+			ServletRequestBindingException.class,
+			ConversionNotSupportedException.class,
+			TypeMismatchException.class,
+			HttpMessageNotReadableException.class,
+			HttpMessageNotWritableException.class,
+			MethodArgumentNotValidException.class,
+			MissingServletRequestPartException.class,
+			BindException.class,
+			NoHandlerFoundException.class,
+			AsyncRequestTimeoutException.class
+		})
+	@Nullable
+	public final ResponseEntity<Object> handleException(Exception ex, WebRequest request) throws Exception {
+		HttpHeaders headers = new HttpHeaders();
+
+		if (ex instanceof HttpRequestMethodNotSupportedException) {
+			HttpStatus status = HttpStatus.METHOD_NOT_ALLOWED;
+			return handleHttpRequestMethodNotSupported((HttpRequestMethodNotSupportedException) ex, headers, status, request);
+		}
+        // ...
+		else if (ex instanceof MethodArgumentNotValidException) {
+			HttpStatus status = HttpStatus.BAD_REQUEST;
+			return handleMethodArgumentNotValid((MethodArgumentNotValidException) ex, headers, status, request);
+		}
+		// ...
+		else {
+			// Unknown exception, typically a wrapper with a common MVC exception as cause
+			// (since @ExceptionHandler type declarations also match first-level causes):
+			// We only deal with top-level MVC exceptions here, so let's rethrow the given
+			// exception for further processing through the HandlerExceptionResolver chain.
+			throw ex;
+		}
+	}
+
+	protected ResponseEntity<Object> handleMethodArgumentNotValid(
+			MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+
+		return handleExceptionInternal(ex, null, headers, status, request);
+	}
+
+	protected ResponseEntity<Object> handleExceptionInternal(
+			Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatus status, WebRequest request) {
+
+		if (HttpStatus.INTERNAL_SERVER_ERROR.equals(status)) {
+			request.setAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE, ex, WebRequest.SCOPE_REQUEST);
+		}
+		return new ResponseEntity<>(body, headers, status);
+	}
+
+}
+
 ```
 
 ### Test

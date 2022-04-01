@@ -3,7 +3,6 @@ package mj.validation.controller;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.catalina.filters.HttpHeaderSecurityFilter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

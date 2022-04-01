@@ -12,7 +12,7 @@ import mj.validation.domain.User;
 
 @RestController
 public class UserController {
-    
+
     @PostMapping("/user")
     public ResponseEntity<Success> newUser(@Valid @RequestBody User user) {
         return ResponseEntity.ok(new Success("성공"));
