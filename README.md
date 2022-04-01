@@ -92,6 +92,7 @@ ModelAttribute 는 필드 단위로 바인딩을 적용된다
 RequestBody (HttpMessageConverter) 는 Json 데이터를 객체로 변경하지 못 하면 예외가 발생한다.
 - 이후 단계인 검증이 수행되지 않는다. 
 - 발생하는 예외는 MethodArgumentNotValidException.  
+- 스프링은 MethodArgumentNotValidException 발생 시 400 status (BAD_REQUEST) 처리  
 
 **RestController**를 **@ControllerAdvice**로 처리
 
@@ -204,7 +205,7 @@ public class UserControllerTests {
     private MockMvc mockMvc;
     
     @Test
-    public void 이메일주소누락_post_400() throws Exception {
+    public void 이메일주소누락_createUser_400() throws Exception {
         User user = new User(1L, "", "123456");
         String content = asJsonString(user);
         mockMvc.perform(post("/user")
@@ -219,7 +220,7 @@ public class UserControllerTests {
     }
 
     @Test
-    public void 이메일포맷맞지않음_post_400() throws Exception {
+    public void 이메일포맷맞지않음_createUser_400() throws Exception {
         User user = new User(1L, "jdfad", "123456");
         String content = asJsonString(user);
         mockMvc.perform(post("/user")
